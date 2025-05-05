@@ -2,244 +2,115 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>كومندس للصرف</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <title>إيميل مؤقت - كومندس</title>
   <style>
     body {
-      font-family: 'Cairo', sans-serif;
-      background: linear-gradient(135deg, #e0f7fa, #ffffff);
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    header {
-      background-color: #00897b;
-      width: 100%;
-      padding: 20px 0;
+      font-family: Arial, sans-serif;
+      background-color: #ffe5e5;
+      color: #000;
       text-align: center;
-      color: white;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 20px;
-    }
-
-    .container {
-      margin: 20px;
+      direction: rtl;
       padding: 20px;
-      width: 90%;
-      max-width: 400px;
-      background-color: white;
-      border-radius: 15px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      box-sizing: border-box;
     }
-
-    .conversion-box {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
+    h1 {
+      color: #b30000;
     }
-
-    select, input {
-      padding: 12px;
-      font-size: 16px;
+    .email-box, .message-box {
+      background: #fff;
+      border: 2px solid #b30000;
       border-radius: 10px;
-      border: 1px solid #ccc;
-      width: 100%;
-      box-sizing: border-box;
+      padding: 15px;
+      margin: 15px auto;
+      max-width: 90%;
     }
-
     button {
-      padding: 12px;
-      background-color: teal;
+      background: #b30000;
       color: white;
       border: none;
-      border-radius: 10px;
-      font-size: 18px;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 6px;
+      font-size: 16px;
       cursor: pointer;
     }
-
-    .converted-result {
-      text-align: center;
-      font-size: 20px;
-      margin: 15px 0;
-      color: #333;
-      font-weight: bold;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-      text-align: center;
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-
-    .last-updated {
-      text-align: center;
-      margin-top: 10px;
-      color: gray;
-      font-size: 13px;
-    }
-
-    footer {
-      width: 100%;
-      text-align: center;
-      padding: 10px;
-      font-size: 12px;
-      color: gray;
-      background-color: #f5f5f5;
-      margin-top: 20px;
-    }
-
-    @media (max-width: 600px) {
-      .container {
-        padding: 15px;
-      }
-
-      .conversion-box {
-        gap: 12px;
-      }
-
-      button {
-        font-size: 16px;
-      }
-
-      .converted-result {
-        font-size: 18px;
-      }
-
-      table {
-        font-size: 12px;
-      }
-
-      th, td {
-        padding: 8px;
-      }
+    button:hover {
+      background: #800000;
     }
   </style>
 </head>
-
 <body>
 
-  <header>كومندس للصرف</header>
+  <h1>كومندس</h1>
+  <h3>إيميل مؤقت</h3>
 
-  <div class="container">
-    <div class="conversion-box">
-      <input type="number" id="amount" value="1" min="0" placeholder="أدخل الكمية" />
-      <select id="fromCurrency"></select>
-      <select id="toCurrency"></select>
-      <button onclick="convertAmount()">تحويل</button>
-    </div>
+  <div class="email-box" id="emailBox">جاري إنشاء الإيميل...</div>
+  <button onclick="createAccount()">تبديل الإيميل</button>
+  <button onclick="fetchMessages()">تحديث الرسائل</button>
 
-    <div class="converted-result" id="convertedResult">...</div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>العملة</th>
-          <th>السعر مقابل العملة الأساسية</th>
-        </tr>
-      </thead>
-      <tbody id="ratesBody">
-        <tr><td colspan="2">جاري التحميل...</td></tr>
-      </tbody>
-    </table>
-
-    <div class="last-updated" id="updatedTime">آخر تحديث: جاري التحميل...</div>
-  </div>
-
-  <footer>
-    تطبيق صرف جميع العملات تم الإنشاء والتطوير بواسطة كومندس
-  </footer>
+  <div class="message-box" id="messages">لا توجد رسائل بعد.</div>
 
   <script>
-    let allRates = {};
-    const fromSelect = document.getElementById('fromCurrency');
-    const toSelect = document.getElementById('toCurrency');
-    const ratesBody = document.getElementById('ratesBody');
-    const resultDiv = document.getElementById('convertedResult');
-    const updatedTime = document.getElementById('updatedTime');
+    let token = '';
+    let email = '';
+    let password = 'test123456';
 
-    async function loadSymbols() {
-      try {
-        const res = await fetch('https://api.exchangerate.host/symbols');
-        const data = await res.json();
-        const symbols = data.symbols;
-        for (let code in symbols) {
-          const opt1 = document.createElement('option');
-          const opt2 = document.createElement('option');
-          opt1.value = opt2.value = code;
-          opt1.text = opt2.text = `${code} - ${symbols[code].description}`;
-          fromSelect.appendChild(opt1);
-          toSelect.appendChild(opt2);
-        }
-        fromSelect.value = 'USD';
-        toSelect.value = 'EUR';
-        fetchRates();
-      } catch (err) {
-        resultDiv.innerText = 'حدث خطأ في تحميل العملات.';
-        console.error(err);
-      }
-    }
+    async function createAccount() {
+      const random = Math.random().toString(36).substring(2, 10);
+      email = `${random}@mail.tm`;
 
-    async function fetchRates() {
-      const base = fromSelect.value;
-      const res = await fetch(`https://api.exchangerate.host/latest?base=${base}`);
+      const res = await fetch('https://api.mail.tm/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: email, password: password })
+      });
+
       const data = await res.json();
-      allRates = data.rates;
-      updateRatesTable();
-      convertAmount();
-      updatedTime.innerText = `آخر تحديث: ${new Date().toLocaleString('ar-EG')}`;
-    }
-
-    function updateRatesTable() {
-      ratesBody.innerHTML = '';
-      for (let currency in allRates) {
-        const row = document.createElement('tr');
-        const td1 = document.createElement('td');
-        td1.innerText = currency;
-        const td2 = document.createElement('td');
-        td2.innerText = allRates[currency].toFixed(3);
-        row.appendChild(td1);
-        row.appendChild(td2);
-        ratesBody.appendChild(row);
+      if (data.address) {
+        document.getElementById('emailBox').innerText = `الإيميل: ${data.address}`;
+        loginAccount();
+      } else {
+        document.getElementById('emailBox').innerText = 'فشل في إنشاء الإيميل. حاول مرة أخرى.';
       }
     }
 
-    function convertAmount() {
-      const amount = parseFloat(document.getElementById('amount').value);
-      const from = fromSelect.value;
-      const to = toSelect.value;
+    async function loginAccount() {
+      const res = await fetch('https://api.mail.tm/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: email, password: password })
+      });
+      const data = await res.json();
+      token = data.token;
+    }
 
-      if (!allRates[to]) {
-        resultDiv.innerText = 'جاري الحساب...';
+    async function fetchMessages() {
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
         return;
       }
 
-      const result = amount * allRates[to];
-      resultDiv.innerText = `${amount} ${from} = ${result.toFixed(2)} ${to}`;
+      const res = await fetch('https://api.mail.tm/messages', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+      const box = document.getElementById('messages');
+      box.innerHTML = '';
+
+      if (data['hydra:member'].length === 0) {
+        box.innerHTML = 'لا توجد رسائل حالياً.';
+      } else {
+        data['hydra:member'].forEach(msg => {
+          const item = document.createElement('div');
+          item.innerHTML = `<strong>من:</strong> ${msg.from.address}<br><strong>العنوان:</strong> ${msg.subject}`;
+          item.style.margin = '10px 0';
+          box.appendChild(item);
+        });
+      }
     }
 
-    fromSelect.addEventListener('change', fetchRates);
-    toSelect.addEventListener('change', convertAmount);
-
-    loadSymbols();
-    setInterval(fetchRates, 3600000); // كل ساعة
+    createAccount(); // يبدأ مباشرة بإنشاء الإيميل
   </script>
 
 </body>
