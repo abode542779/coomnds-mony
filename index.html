@@ -1,117 +1,159 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إيميل مؤقت - كومندس</title>
+  <title>كومندس - الإيميلات المؤقتة</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #ffe5e5;
-      color: #000;
-      text-align: center;
-      direction: rtl;
+      font-family: 'Arial', sans-serif;
+      background-color: #ff4d4d;
+      color: white;
+      margin: 0;
       padding: 20px;
+      text-align: center;
     }
-    h1 {
-      color: #b30000;
+    header h1 {
+      font-size: 36px;
+      margin-bottom: 5px;
     }
-    .email-box, .message-box {
-      background: #fff;
-      border: 2px solid #b30000;
-      border-radius: 10px;
-      padding: 15px;
-      margin: 15px auto;
-      max-width: 90%;
+    header p {
+      font-size: 18px;
+      margin-top: 0;
+    }
+    .timer-container {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      margin: 20px auto;
+    }
+    .circle {
+      position: absolute;
+      top: 0; left: 0;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 8px solid white;
+      box-sizing: border-box;
+      clip: rect(0, 160px, 160px, 80px);
+    }
+    .circle .fill {
+      position: absolute;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 8px solid white;
+      clip: rect(0, 80px, 160px, 0);
+      transform: rotate(0deg);
+      transform-origin: center;
+    }
+    .time-text {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .email-box {
+      background-color: white;
+      color: black;
+      padding: 10px;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 300px;
+      border-radius: 5px;
     }
     button {
-      background: #b30000;
-      color: white;
+      background-color: white;
+      color: red;
       border: none;
-      padding: 10px 20px;
-      margin: 5px;
-      border-radius: 6px;
-      font-size: 16px;
+      padding: 10px 15px;
+      margin: 10px 5px;
+      border-radius: 5px;
+      font-weight: bold;
       cursor: pointer;
     }
-    button:hover {
-      background: #800000;
+    footer {
+      margin-top: 40px;
+      font-size: 14px;
+    }
+    .social {
+      margin-top: 10px;
+    }
+    .social img {
+      width: 24px;
+      vertical-align: middle;
+    }
+    .social a {
+      color: white;
+      margin: 0 10px;
+      text-decoration: none;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
+  <header>
+    <h1>كومندس</h1>
+    <p>لإنشاء الإيميلات المؤقتة</p>
+  </header>
 
-  <h1>كومندس</h1>
-  <h3>إيميل مؤقت</h3>
+  <div class="timer-container">
+    <div class="circle">
+      <div class="fill" id="circleFill"></div>
+    </div>
+    <div class="time-text" id="timer">60:00</div>
+  </div>
 
-  <div class="email-box" id="emailBox">جاري إنشاء الإيميل...</div>
-  <button onclick="createAccount()">تبديل الإيميل</button>
-  <button onclick="fetchMessages()">تحديث الرسائل</button>
+  <div class="email-box" id="emailBox">email@example.com</div>
 
-  <div class="message-box" id="messages">لا توجد رسائل بعد.</div>
+  <div>
+    <button onclick="generateEmail()">تبديل الإيميل</button>
+    <button onclick="deleteEmail()">حذف الإيميل</button>
+  </div>
+
+  <footer>
+    تم الإنشاء والتطوير بواسطة كومندس
+    <div class="social">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" />
+      <a href="https://www.instagram.com/abode_542?igsh=cWF1NzB4YnlsNG9n" target="_blank">abode_542</a>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" />
+      <a href="https://t.me/abode_542" target="_blank">abode_542</a>
+    </div>
+  </footer>
 
   <script>
-    let token = '';
-    let email = '';
-    let password = 'test123456';
+    let timeLeft = 60 * 60;
 
-    async function createAccount() {
+    function updateTimer() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      document.getElementById("timer").innerText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      const angle = 360 * ((60*60 - timeLeft) / (60*60));
+      document.getElementById("circleFill").style.transform = `rotate(${angle}deg)`;
+      timeLeft--;
+      if (timeLeft < 0) {
+        generateEmail();
+        timeLeft = 60 * 60;
+      }
+    }
+
+    function generateEmail() {
       const random = Math.random().toString(36).substring(2, 10);
-      email = `${random}@mail.tm`;
-
-      const res = await fetch('https://api.mail.tm/accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: email, password: password })
-      });
-
-      const data = await res.json();
-      if (data.address) {
-        document.getElementById('emailBox').innerText = `الإيميل: ${data.address}`;
-        loginAccount();
-      } else {
-        document.getElementById('emailBox').innerText = 'فشل في إنشاء الإيميل. حاول مرة أخرى.';
-      }
+      const domain = "@mail.tm";
+      document.getElementById("emailBox").innerText = random + domain;
     }
 
-    async function loginAccount() {
-      const res = await fetch('https://api.mail.tm/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: email, password: password })
-      });
-      const data = await res.json();
-      token = data.token;
+    function deleteEmail() {
+      document.getElementById("emailBox").innerText = "تم حذف الإيميل";
     }
 
-    async function fetchMessages() {
-      if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
-        return;
-      }
-
-      const res = await fetch('https://api.mail.tm/messages', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      const data = await res.json();
-      const box = document.getElementById('messages');
-      box.innerHTML = '';
-
-      if (data['hydra:member'].length === 0) {
-        box.innerHTML = 'لا توجد رسائل حالياً.';
-      } else {
-        data['hydra:member'].forEach(msg => {
-          const item = document.createElement('div');
-          item.innerHTML = `<strong>من:</strong> ${msg.from.address}<br><strong>العنوان:</strong> ${msg.subject}`;
-          item.style.margin = '10px 0';
-          box.appendChild(item);
-        });
-      }
-    }
-
-    createAccount(); // يبدأ مباشرة بإنشاء الإيميل
+    setInterval(updateTimer, 1000);
+    generateEmail();
   </script>
-
 </body>
-</html>/html>
+      </html>
