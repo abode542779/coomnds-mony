@@ -67,6 +67,17 @@
       max-width: 300px;
       border-radius: 5px;
     }
+    .messages-box {
+      background-color: white;
+      color: black;
+      padding: 10px;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 300px;
+      border-radius: 5px;
+      min-height: 100px;
+      overflow-y: auto;
+    }
     button {
       background-color: white;
       color: red;
@@ -94,6 +105,10 @@
       text-decoration: none;
       font-weight: bold;
     }
+    #copyButton {
+      background-color: #4CAF50;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -110,10 +125,27 @@
   </div>
 
   <div class="email-box" id="emailBox">email@example.com</div>
+  
+  <!-- صندوق الرسائل الواردة -->
+  <div class="messages-box" id="messagesBox">
+    <p>لا توجد رسائل حالياً.</p>
+  </div>
+
+  <!-- اختيار نوع الإيميل -->
+  <div>
+    <label for="emailProvider">اختر مزود الإيميل:</label>
+    <select id="emailProvider">
+      <option value="mail.tm">mail.tm</option>
+      <option value="temp-mail.org">temp-mail.org</option>
+      <option value="guerrillamail.com">guerrillamail.com</option>
+      <option value="10minutemail.com">10minutemail.com</option>
+    </select>
+  </div>
 
   <div>
     <button onclick="generateEmail()">تبديل الإيميل</button>
     <button onclick="deleteEmail()">حذف الإيميل</button>
+    <button id="copyButton" onclick="copyEmail()">نسخ الإيميل</button>
   </div>
 
   <footer>
@@ -128,6 +160,8 @@
 
   <script>
     let timeLeft = 60 * 60;
+    let currentDomain = "mail.tm"; // Default domain
+    let apiKey = "YOUR_API_KEY"; // ضع هنا API Key الخاص بك من Mail.tm
 
     function updateTimer() {
       const minutes = Math.floor(timeLeft / 60);
@@ -144,16 +178,59 @@
 
     function generateEmail() {
       const random = Math.random().toString(36).substring(2, 10);
-      const domain = "@mail.tm";
-      document.getElementById("emailBox").innerText = random + domain;
+      const domain = currentDomain;
+      document.getElementById("emailBox").innerText = random + "@" + domain;
+      fetchMessages(); // جلب الرسائل بعد تغيير الإيميل
     }
 
     function deleteEmail() {
       document.getElementById("emailBox").innerText = "تم حذف الإيميل";
+      document.getElementById("messagesBox").innerHTML = "<p>لا توجد رسائل حالياً.</p>"; // تنظيف الرسائل
     }
+
+    function copyEmail() {
+      const email = document.getElementById("emailBox").innerText;
+      navigator.clipboard.writeText(email).then(() => {
+        alert("تم نسخ الإيميل");
+      });
+    }
+
+    function fetchMessages() {
+      const email = document.getElementById("emailBox").innerText;
+      
+      // إرسال طلب API إلى Mail.tm للحصول على الرسائل
+      fetch('https://api.mail.tm/messages', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        let messages = '';
+        if (data.messages && data.messages.length > 0) {
+          data.messages.forEach(msg => {
+            messages += `<p><strong>عنوان الرسالة:</strong> ${msg.subject}</p><p><strong>من:</strong> ${msg.sender}</p><p><strong>التاريخ:</strong> ${msg.date}</p><hr>`;
+          });
+        } else {
+          messages = '<p>لا توجد رسائل حالياً.</p>';
+        }
+        document.getElementById("messagesBox").innerHTML = messages;
+      })
+      .catch(error => {
+        console.error('Error fetching messages:', error);
+      });
+    }
+
+    // تغيير مزود الإيميل بناءً على الاختيار
+    document.getElementById("emailProvider").addEventListener("change", function() {
+      currentDomain = this.value;
+      generateEmail();
+    });
 
     setInterval(updateTimer, 1000);
     generateEmail();
   </script>
 </body>
-      </html>
+  </html>
